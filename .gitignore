@@ -29,3 +29,7 @@ Thumbs.db
 
 # Lock files (each package manages its own)
 pnpm-lock.yaml
+package-lock.json
+
+# Proprietary / hosted platform (own git repo, not tracked here)
+platform/
