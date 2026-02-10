@@ -1,0 +1,21 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "agentincident-cli"
+version = "0.1.0"
+description = "CLI report generator for AgentIncident records"
+license = "Apache-2.0"
+requires-python = ">=3.10"
+dependencies = ["agentincident>=0.1.0"]
+
+[project.optional-dependencies]
+classify = ["agentincident-classifier>=0.1.0"]
+dev = ["pytest>=8.0", "pytest-cov"]
+
+[project.scripts]
+agentincident = "agentincident_cli.main:cli"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/agentincident_cli"]

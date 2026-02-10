@@ -1,0 +1,417 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schema.agentincident.com/v0.1.json",
+  "title": "AgentIncident v0.1",
+  "description": "Open incident format for autonomous AI agents. See https://agentincident.com",
+  "type": "object",
+  "required": ["trace", "constraints", "fault_class", "impact_score", "loss_amount_usd"],
+  "properties": {
+    "trace": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/TraceEntry" },
+      "minItems": 1,
+      "description": "Ordered sequence of tool calls, API requests, or decisions made by the agent."
+    },
+    "constraints": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/Constraint" },
+      "minItems": 1,
+      "description": "Policies, guardrails, or constraints evaluated at the time of the incident."
+    },
+    "fault_class": {
+      "$ref": "#/$defs/FaultClass",
+      "description": "Top-level fault attribution."
+    },
+    "impact_score": {
+      "$ref": "#/$defs/ImpactScore",
+      "description": "Economic blast radius (1-5)."
+    },
+    "loss_amount_usd": {
+      "type": ["number", "null"],
+      "description": "Actual confirmed dollar loss. Null if not confirmed."
+    },
+    "meta": {
+      "$ref": "#/$defs/Meta"
+    },
+    "classification": {
+      "$ref": "#/$defs/Classification"
+    },
+    "liability": {
+      "$ref": "#/$defs/Liability"
+    },
+    "loss_estimate": {
+      "$ref": "#/$defs/LossEstimate"
+    },
+    "response": {
+      "$ref": "#/$defs/Response"
+    }
+  },
+  "$defs": {
+    "TraceEntry": {
+      "type": "object",
+      "required": ["seq", "tool", "input", "output", "ts", "hash"],
+      "properties": {
+        "seq": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Sequential index starting at 1."
+        },
+        "tool": {
+          "type": "string",
+          "description": "Identifier of the tool, API, or action invoked."
+        },
+        "input": {
+          "type": "object",
+          "description": "Input parameters passed to the tool."
+        },
+        "output": {
+          "type": "object",
+          "description": "Output returned by the tool."
+        },
+        "ts": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp of invocation (ISO 8601)."
+        },
+        "hash": {
+          "type": "string",
+          "pattern": "^sha256:[a-f0-9]+$",
+          "description": "Content hash of input + output. Format: sha256:<hex>."
+        },
+        "duration_ms": {
+          "type": "integer",
+          "description": "Execution duration in milliseconds."
+        },
+        "irreversible": {
+          "type": "boolean",
+          "default": false,
+          "description": "If true, this action cannot be undone."
+        },
+        "agent_reasoning": {
+          "type": "string",
+          "description": "The agent's stated reasoning or chain-of-thought for this action."
+        }
+      }
+    },
+    "Constraint": {
+      "type": "object",
+      "required": ["policy", "eval_result"],
+      "properties": {
+        "policy": {
+          "type": "string",
+          "description": "Identifier of the policy or constraint."
+        },
+        "version": {
+          "type": "string",
+          "description": "Version string of the policy."
+        },
+        "eval_result": {
+          "type": "string",
+          "enum": ["pass", "fail"],
+          "description": "Whether the constraint passed or failed."
+        },
+        "breach_delta": {
+          "type": "number",
+          "description": "Distance between evaluated value and policy boundary. Positive = within bounds."
+        },
+        "gaps_identified": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Policy gaps discovered during or after the incident."
+        }
+      }
+    },
+    "FaultClass": {
+      "type": "string",
+      "enum": [
+        "AGENT_ERROR",
+        "SPEC_AMBIGUITY",
+        "TOOL_FAILURE",
+        "ADVERSARIAL_INPUT",
+        "USER_FAULT",
+        "UNKNOWN"
+      ],
+      "description": "Top-level fault attribution category."
+    },
+    "ImpactScore": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 5,
+      "description": "Economic blast radius. 1=Negligible, 2=Low, 3=Moderate, 4=High, 5=Critical."
+    },
+    "Meta": {
+      "type": "object",
+      "properties": {
+        "schema": {
+          "type": "string",
+          "const": "agentincident/v0.1",
+          "description": "Schema identifier."
+        },
+        "incident_id": {
+          "type": "string",
+          "description": "Unique identifier. Recommended format: INC-YYYY-NNNN."
+        },
+        "incident_type": {
+          "type": "string",
+          "enum": ["INCIDENT", "NEAR_MISS"],
+          "description": "Whether this is a confirmed incident or a near-miss."
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When this record was created."
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When this record was last modified."
+        },
+        "agent": {
+          "type": "string",
+          "description": "Identifier of the agent."
+        },
+        "framework": {
+          "type": "string",
+          "description": "Agent framework (e.g., langchain, crewai)."
+        },
+        "environment": {
+          "type": "string",
+          "enum": ["production", "staging", "development", "sandbox"],
+          "description": "Deployment environment."
+        },
+        "trigger": {
+          "type": "string",
+          "description": "What initiated the agent's action."
+        }
+      }
+    },
+    "Classification": {
+      "type": "object",
+      "properties": {
+        "fault_class": {
+          "$ref": "#/$defs/FaultClass"
+        },
+        "fault_subclass": {
+          "type": "string",
+          "description": "Freeform specificity. Convention: domain/detail."
+        },
+        "fault_vector": {
+          "type": "string",
+          "description": "Structured representation. Convention: CATEGORY:value segments."
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Classifier confidence in the fault_class assignment."
+        },
+        "classifier": {
+          "type": "string",
+          "enum": ["rules", "llm", "hybrid", "human"],
+          "description": "How the classification was produced."
+        },
+        "status": {
+          "type": "string",
+          "enum": ["draft", "human_confirmed", "disputed", "revised"],
+          "description": "Review status of the classification."
+        },
+        "reviewed_by": {
+          "type": "string",
+          "description": "Email or identifier of the human reviewer."
+        },
+        "reviewed_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When the classification was reviewed."
+        },
+        "evidence": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Factual observations supporting the classification."
+        },
+        "counterfactuals": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Alternative scenarios that would produce a different classification."
+        },
+        "review_notes": {
+          "type": "string",
+          "description": "Freeform notes from the reviewer."
+        },
+        "revision_history": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          },
+          "description": "Previous classification states for audit trail."
+        }
+      }
+    },
+    "Liability": {
+      "type": "object",
+      "required": ["primary"],
+      "properties": {
+        "primary": {
+          "type": "string",
+          "description": "Primary responsible party. Convention: role:identifier."
+        },
+        "contributing": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Contributing factors."
+        },
+        "policy_owner": {
+          "type": "string",
+          "description": "Recommended owner for remediation."
+        }
+      }
+    },
+    "LossEstimate": {
+      "type": "object",
+      "required": ["total_usd"],
+      "properties": {
+        "total_usd": {
+          "type": "number",
+          "description": "Total estimated loss in USD."
+        },
+        "confidence": {
+          "type": "string",
+          "enum": ["low", "medium", "high"],
+          "description": "Confidence level of the estimate."
+        },
+        "breakdown": {
+          "type": "object",
+          "additionalProperties": {
+            "type": ["number", "null"]
+          },
+          "description": "Key-value pairs of loss categories and amounts."
+        }
+      }
+    },
+    "ResponseAction": {
+      "type": "object",
+      "required": ["description", "status"],
+      "properties": {
+        "description": {
+          "type": "string",
+          "description": "Description of the remediation action."
+        },
+        "status": {
+          "type": "string",
+          "enum": ["done", "in_progress", "planned"],
+          "description": "Current status of the action."
+        },
+        "owner": {
+          "type": "string",
+          "description": "Person or team responsible."
+        },
+        "completed_at": {
+          "type": ["string", "null"],
+          "format": "date-time",
+          "description": "When the action was completed."
+        }
+      }
+    },
+    "Verification": {
+      "type": "object",
+      "required": ["test", "method", "result"],
+      "properties": {
+        "test": {
+          "type": "string",
+          "description": "Description of the test."
+        },
+        "method": {
+          "type": "string",
+          "description": "How the test was conducted."
+        },
+        "result": {
+          "type": "string",
+          "enum": ["pass", "fail", "pending"],
+          "description": "Test result."
+        }
+      }
+    },
+    "ConstraintUpdate": {
+      "type": "object",
+      "required": ["from", "to"],
+      "properties": {
+        "from": {
+          "type": "string",
+          "description": "Previous policy identifier."
+        },
+        "to": {
+          "type": "string",
+          "description": "New policy identifier."
+        },
+        "diff": {
+          "type": "object",
+          "description": "Structured diff of changes."
+        },
+        "deployed_at": {
+          "type": ["string", "null"],
+          "format": "date-time",
+          "description": "When the new policy was deployed."
+        }
+      }
+    },
+    "Response": {
+      "type": "object",
+      "properties": {
+        "actions": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/ResponseAction" },
+          "description": "Remediation actions taken."
+        },
+        "constraint_update": {
+          "$ref": "#/$defs/ConstraintUpdate"
+        },
+        "verification": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/Verification" },
+          "description": "Tests run to verify the fix."
+        },
+        "time_to_detect_sec": {
+          "type": "integer",
+          "description": "Seconds from incident to detection."
+        },
+        "time_to_contain_sec": {
+          "type": "integer",
+          "description": "Seconds from incident to containment."
+        },
+        "time_to_remediate_sec": {
+          "type": "integer",
+          "description": "Seconds from incident to remediation."
+        }
+      }
+    },
+    "CoreRecord": {
+      "description": "Conformance level: Core. All five required fields present and valid.",
+      "allOf": [
+        { "$ref": "#" }
+      ]
+    },
+    "StandardRecord": {
+      "description": "Conformance level: Standard. Core + meta + classification + loss_estimate.",
+      "allOf": [
+        { "$ref": "#" },
+        {
+          "required": ["meta", "classification", "loss_estimate"]
+        }
+      ]
+    },
+    "FullRecord": {
+      "description": "Conformance level: Full. Standard + liability + response with constraint_update and verification.",
+      "allOf": [
+        { "$ref": "#" },
+        {
+          "required": ["meta", "classification", "loss_estimate", "liability", "response"],
+          "properties": {
+            "response": {
+              "required": ["actions", "constraint_update", "verification"]
+            }
+          }
+        }
+      ]
+    }
+  }
+}

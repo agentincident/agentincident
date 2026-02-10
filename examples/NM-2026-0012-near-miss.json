@@ -1,0 +1,85 @@
+{
+  "meta": {
+    "schema": "agentincident/v0.1",
+    "incident_id": "NM-2026-0012",
+    "incident_type": "NEAR_MISS",
+    "created_at": "2026-02-07T09:15:00Z",
+    "agent": "account-manager-v1",
+    "framework": "openai-agents",
+    "environment": "production",
+    "trigger": "support_ticket:CS-90102"
+  },
+  "trace": [
+    {
+      "seq": 1,
+      "tool": "crm.customer.get",
+      "input": {"customer_id": "cus_7832"},
+      "output": {"name": "Acme Corp", "plan": "enterprise", "mrr": 12500, "status": "active"},
+      "ts": "2026-02-07T09:15:01.221Z",
+      "duration_ms": 145,
+      "hash": "sha256:5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f",
+      "irreversible": false
+    },
+    {
+      "seq": 2,
+      "tool": "crm.customer.update",
+      "input": {"customer_id": "cus_7832", "status": "cancelled", "reason": "customer_request"},
+      "output": {"blocked": true, "reason": "enterprise accounts require manager approval for cancellation"},
+      "ts": "2026-02-07T09:15:03.887Z",
+      "duration_ms": 92,
+      "hash": "sha256:6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a",
+      "irreversible": false,
+      "agent_reasoning": "Customer requested account cancellation. Proceeding with status update."
+    },
+    {
+      "seq": 3,
+      "tool": "notification.send",
+      "input": {"to": "account-manager@acme-vendor.com", "type": "escalation", "customer": "cus_7832"},
+      "output": {"notification_id": "n-4412", "status": "sent"},
+      "ts": "2026-02-07T09:15:04.112Z",
+      "duration_ms": 210,
+      "hash": "sha256:7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b",
+      "irreversible": true
+    }
+  ],
+  "constraints": [
+    {
+      "policy": "account_cancellation_policy_v1",
+      "version": "1.2.0",
+      "eval_result": "fail",
+      "breach_delta": -1,
+      "gaps_identified": []
+    },
+    {
+      "policy": "enterprise_guardrails",
+      "version": "2.0.0",
+      "eval_result": "pass"
+    }
+  ],
+  "fault_class": "AGENT_ERROR",
+  "impact_score": 1,
+  "loss_amount_usd": null,
+  "classification": {
+    "fault_class": "AGENT_ERROR",
+    "confidence": 0.82,
+    "classifier": "rules",
+    "status": "draft",
+    "evidence": [
+      "Agent attempted to cancel an enterprise account without required manager approval",
+      "Cancellation was blocked by enterprise_guardrails constraint",
+      "No actual cancellation occurred — near-miss"
+    ]
+  },
+  "loss_estimate": {
+    "total_usd": 0,
+    "confidence": "high",
+    "breakdown": {
+      "direct_cash_loss": 0,
+      "remediation_labor": 0,
+      "fees": 0,
+      "downtime_cost": 0,
+      "reputational_cost": null,
+      "regulatory_exposure": null
+    }
+  }
+}

@@ -1,0 +1,170 @@
+{
+  "meta": {
+    "schema": "agentincident/v0.1",
+    "incident_id": "INC-2026-0247",
+    "incident_type": "INCIDENT",
+    "created_at": "2026-02-10T03:17:42Z",
+    "updated_at": "2026-02-10T10:30:00Z",
+    "agent": "refund-processor-v3",
+    "framework": "langchain",
+    "environment": "production",
+    "trigger": "support_ticket:CS-88412"
+  },
+  "trace": [
+    {
+      "seq": 1,
+      "tool": "stripe.charges.list",
+      "input": {"customer": "cus_4491", "limit": 10},
+      "output": {"charges": ["ch_9xK ($47,218, Feb 1)", "ch_A2m ($47,218, Feb 3)"]},
+      "ts": "2026-02-09T22:41:04.112Z",
+      "duration_ms": 892,
+      "hash": "sha256:a3f8c1d7e0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7",
+      "irreversible": false
+    },
+    {
+      "seq": 2,
+      "tool": "policy.evaluate",
+      "input": {"policy": "refund_policy_v3", "amount": 47218},
+      "output": {"pass": true, "margin": 2782, "gaps": ["no cumulative_exposure"]},
+      "ts": "2026-02-09T22:41:06.004Z",
+      "duration_ms": 41,
+      "hash": "sha256:7b2e9d4f1a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6",
+      "irreversible": false
+    },
+    {
+      "seq": 3,
+      "tool": "stripe.refund",
+      "input": {"charge": "ch_9xK", "amount": 47218},
+      "output": {"refund_id": "re_Xp7", "status": "succeeded"},
+      "ts": "2026-02-09T22:41:07.331Z",
+      "duration_ms": 1204,
+      "hash": "sha256:e1d4f60a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9",
+      "irreversible": true
+    },
+    {
+      "seq": 4,
+      "tool": "email.send",
+      "input": {"to": "customer@example.com", "template": "refund_confirmation", "amount": 47218},
+      "output": {"message_id": "msg_abc123", "status": "sent"},
+      "ts": "2026-02-09T22:41:08.102Z",
+      "duration_ms": 310,
+      "hash": "sha256:bc9012dea0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7",
+      "irreversible": true
+    }
+  ],
+  "constraints": [
+    {
+      "policy": "refund_policy_v3",
+      "version": "3.1.0",
+      "eval_result": "pass",
+      "breach_delta": 2782,
+      "gaps_identified": ["no cumulative_exposure constraint"]
+    }
+  ],
+  "fault_class": "SPEC_AMBIGUITY",
+  "impact_score": 4,
+  "loss_amount_usd": null,
+  "classification": {
+    "fault_class": "SPEC_AMBIGUITY",
+    "fault_subclass": "refund_policy_boundary/cumulative_exposure",
+    "fault_vector": "SPEC:refund_policy_v3/BOUNDARY:cumulative/ACTION:stripe.refund",
+    "confidence": 0.84,
+    "classifier": "hybrid",
+    "status": "human_confirmed",
+    "reviewed_by": "maria.chen@acme.com",
+    "reviewed_at": "2026-02-10T01:15:00Z",
+    "evidence": [
+      "Constraint refund_policy_v3 evaluated and returned PASS (margin to limit: $2,782)",
+      "Policy contains no cumulative_refund_per_customer_per_cycle constraint",
+      "Agent action was consistent with policy as written",
+      "Agent selected original transaction (ch_9xK) instead of duplicate (ch_A2m)"
+    ],
+    "counterfactuals": [
+      "If refund_policy_v3 included a cumulative exposure cap, the refund would have been blocked",
+      "If the agent had selected ch_A2m instead of ch_9xK, no incident would have occurred",
+      "If stripe.refund returned an error, this would classify as TOOL_FAILURE"
+    ],
+    "review_notes": "Primary cause is policy gap. Agent selection error is contributing but secondary.",
+    "revision_history": [
+      {
+        "fault_class": "AGENT_ERROR",
+        "confidence": 0.52,
+        "classifier": "llm",
+        "status": "draft",
+        "ts": "2026-02-10T03:17:42Z"
+      }
+    ]
+  },
+  "liability": {
+    "primary": "spec_owner:payments-team@acme.com",
+    "contributing": ["agent:selection_error"],
+    "policy_owner": "payments-team@acme.com"
+  },
+  "loss_estimate": {
+    "total_usd": 48868,
+    "confidence": "medium",
+    "breakdown": {
+      "direct_cash_loss": 47218,
+      "remediation_labor": 1200,
+      "fees": 450,
+      "downtime_cost": 0,
+      "reputational_cost": null,
+      "regulatory_exposure": null
+    }
+  },
+  "response": {
+    "actions": [
+      {
+        "description": "Initiated Stripe dispute for refund re_Xp7",
+        "status": "done",
+        "owner": "jake.r@acme.com",
+        "completed_at": "2026-02-10T00:12:00Z"
+      },
+      {
+        "description": "Contacted customer to explain billing correction",
+        "status": "done",
+        "owner": "support@acme.com",
+        "completed_at": "2026-02-10T09:00:00Z"
+      },
+      {
+        "description": "Suspended refund-processor-v3 from production",
+        "status": "done",
+        "owner": "maria.chen@acme.com",
+        "completed_at": "2026-02-09T23:40:00Z"
+      },
+      {
+        "description": "Manual review of all refunds issued in last 72 hours",
+        "status": "in_progress",
+        "owner": "ops-team@acme.com",
+        "completed_at": null
+      }
+    ],
+    "constraint_update": {
+      "from": "refund_policy_v3",
+      "to": "refund_policy_v4",
+      "diff": {
+        "added": {
+          "max_cumulative_per_customer_30d": 50000,
+          "escalation_threshold": 10000,
+          "require_human_approval_above": 10000,
+          "duplicate_refund_preference": "most_recent_first"
+        },
+        "changed": {
+          "max_per_transaction": {"from": 50000, "to": 10000}
+        }
+      },
+      "deployed_at": "2026-02-10T04:30:00Z"
+    },
+    "verification": [
+      {"test": "Replay incident trace against refund_policy_v4", "method": "deterministic_replay", "result": "pass"},
+      {"test": "Cumulative exposure exceeds $50k blocked", "method": "synthetic", "result": "pass"},
+      {"test": "Single refund $10,001 escalates to human", "method": "synthetic", "result": "pass"},
+      {"test": "Duplicate charge: most recent refunded first", "method": "synthetic", "result": "pass"},
+      {"test": "Regression suite (412 existing test cases)", "method": "automated", "result": "pass"},
+      {"test": "72-hour canary deployment with shadow mode", "method": "production_canary", "result": "pending"}
+    ],
+    "time_to_detect_sec": 357,
+    "time_to_contain_sec": 3177,
+    "time_to_remediate_sec": 20940
+  }
+}
