@@ -5,7 +5,6 @@ import json
 from datetime import datetime, timezone
 from typing import Any, Callable
 
-from .export import incident_to_dict, incident_to_json
 from .hash import compute_hash
 from .schema import validate as schema_validate
 from .types import Constraint, Incident, Meta, TraceEntry

@@ -8,8 +8,7 @@ if TYPE_CHECKING:
 
 try:
     from opentelemetry import trace as otel_trace
-    from opentelemetry.sdk.trace import ReadableSpan, TracerProvider
-    from opentelemetry.sdk.trace.export import SpanExporter, SpanExportResult
+    from opentelemetry.sdk.trace.export import SpanExportResult
 
     _HAS_OTEL = True
 except ImportError:

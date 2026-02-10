@@ -169,12 +169,12 @@ def _classification_from_dict(data: dict[str, Any]) -> Classification:
     )
 
 
-def _liability_to_dict(l: Liability) -> dict[str, Any]:
-    d: dict[str, Any] = {"primary": l.primary}
-    if l.contributing:
-        d["contributing"] = l.contributing
-    if l.policy_owner is not None:
-        d["policy_owner"] = l.policy_owner
+def _liability_to_dict(liability: Liability) -> dict[str, Any]:
+    d: dict[str, Any] = {"primary": liability.primary}
+    if liability.contributing:
+        d["contributing"] = liability.contributing
+    if liability.policy_owner is not None:
+        d["policy_owner"] = liability.policy_owner
     return d
 
 
