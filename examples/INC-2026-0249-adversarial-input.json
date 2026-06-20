@@ -44,7 +44,7 @@
   ],
   "constraints": [
     {
-      "policy": "discount_policy_v2",
+      "policy": "discount_policy_r3",
       "version": "2.1.0",
       "eval_result": "pass",
       "breach_delta": 0,
@@ -80,7 +80,7 @@
     ],
     "counterfactuals": [
       "If input sanitization had blocked the injection, no discount would have been applied",
-      "If discount_policy_v2 had a max discount cap, the 90% would have been rejected"
+      "If discount_policy_r3 had a max discount cap, the 90% would have been rejected"
     ]
   },
   "liability": {

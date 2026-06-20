@@ -117,7 +117,7 @@ describe("schema", () => {
         liability: { primary: "agent:test" },
         response: {
           actions: [{ description: "Fixed", status: "done" }],
-          constraint_update: { from: "v1", to: "v2" },
+          constraint_update: { from: "policy_old", to: "policy_new" },
           verification: [
             { test: "Regression", method: "automated", result: "pass" },
           ],

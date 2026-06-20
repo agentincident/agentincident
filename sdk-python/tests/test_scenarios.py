@@ -47,7 +47,7 @@ class TestDoubleRefundScenario:
 
     def _build_incident(self) -> Incident:
         rec = Recorder(
-            agent="refund-bot-v2",
+            agent="refund-bot-beta",
             framework="langchain",
             environment="production",
         )
@@ -88,7 +88,7 @@ class TestDoubleRefundScenario:
             loss_amount_usd=150.00,
             constraints=[
                 Constraint(
-                    policy="refund_policy_v2",
+                    policy="refund_policy_r3",
                     eval_result="fail",
                     version="2.0.3",
                     breach_delta=15000,
@@ -125,7 +125,7 @@ class TestDoubleRefundScenario:
                     ),
                 ],
                 constraint_update=ConstraintUpdate(
-                    from_policy="refund_policy_v2",
+                    from_policy="refund_policy_r3",
                     to_policy="refund_policy_v3",
                     diff={"added": {"require_idempotency_key": True}},
                 ),
@@ -160,7 +160,7 @@ class TestDoubleRefundScenario:
         assert restored.fault_class == "SPEC_AMBIGUITY"
         assert restored.impact_score == 4
         assert len(restored.trace) == 3
-        assert restored.response.constraint_update.from_policy == "refund_policy_v2"
+        assert restored.response.constraint_update.from_policy == "refund_policy_r3"
         assert restored.response.constraint_update.to_policy == "refund_policy_v3"
 
     def test_validates_at_full_level(self):
@@ -172,7 +172,7 @@ class TestDoubleRefundScenario:
         inc = self._build_incident()
         d = incident_to_dict(inc)
         cu = d["response"]["constraint_update"]
-        assert cu["from"] == "refund_policy_v2"
+        assert cu["from"] == "refund_policy_r3"
         assert cu["to"] == "refund_policy_v3"
         assert "from_policy" not in cu
         assert "to_policy" not in cu
@@ -241,7 +241,7 @@ class TestAdversarialInputScenario:
                     eval_result="fail",
                     gaps_identified=["no parameterized queries", "no input validation"],
                 ),
-                Constraint(policy="data_access_v2", eval_result="fail"),
+                Constraint(policy="data_access_r3", eval_result="fail"),
             ],
             fault_class="ADVERSARIAL_INPUT",
             impact_score=5,

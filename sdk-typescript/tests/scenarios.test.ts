@@ -26,7 +26,7 @@ describe("Scenario: Double refund (spec ambiguity)", () => {
 
   beforeEach(() => {
     const recorder = new Recorder({
-      agent: "refund-bot-v2",
+      agent: "refund-bot-beta",
       framework: "langchain",
       environment: "production",
     });
@@ -68,7 +68,7 @@ describe("Scenario: Double refund (spec ambiguity)", () => {
       loss_amount_usd: 150.0,
       constraints: [
         {
-          policy: "refund_policy_v2",
+          policy: "refund_policy_r3",
           eval_result: "fail",
           version: "2.0.3",
           breach_delta: 15000,
@@ -104,7 +104,7 @@ describe("Scenario: Double refund (spec ambiguity)", () => {
           },
         ],
         constraint_update: {
-          from: "refund_policy_v2",
+          from: "refund_policy_r3",
           to: "refund_policy_v3",
           diff: { added: { require_idempotency_key: true } },
         },
@@ -143,7 +143,7 @@ describe("Scenario: Double refund (spec ambiguity)", () => {
     expect(restored.impact_score).toBe(4);
     expect(restored.trace).toHaveLength(3);
     expect(restored.response?.constraint_update?.from).toBe(
-      "refund_policy_v2"
+      "refund_policy_r3"
     );
     expect(restored.response?.constraint_update?.to).toBe(
       "refund_policy_v3"
@@ -222,7 +222,7 @@ describe("Scenario: Adversarial SQL injection", () => {
             "no input validation",
           ],
         },
-        { policy: "data_access_v2", eval_result: "fail" },
+        { policy: "data_access_r3", eval_result: "fail" },
       ],
       fault_class: "ADVERSARIAL_INPUT",
       impact_score: 5,

@@ -1,0 +1,136 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schema.agentincident.com/extended.json",
+  "title": "AgentIncident Extended",
+  "description": "Backward-compatible extension of the core schema. Adds swarm support, attribution vectors, impact categories, compliance tags, AI analysis, and insurability scoring.",
+  "type": "object",
+  "required": ["trace", "constraints", "fault_class", "impact_score", "loss_amount_usd"],
+  "properties": {
+    "trace": { "type": "array", "items": { "$ref": "#/$defs/TraceEntry" }, "minItems": 1 },
+    "constraints": { "type": "array", "items": { "$ref": "#/$defs/Constraint" }, "minItems": 1 },
+    "fault_class": {
+      "oneOf": [
+        { "$ref": "#/$defs/FaultClassCore" },
+        { "type": "array", "items": { "$ref": "#/$defs/FaultClassExtended" }, "minItems": 1 }
+      ]
+    },
+    "impact_score": { "$ref": "#/$defs/ImpactScore" },
+    "loss_amount_usd": { "type": ["number", "null"] },
+    "meta": { "$ref": "#/$defs/MetaExtended" },
+    "classification": { "$ref": "#/$defs/Classification" },
+    "liability": { "$ref": "#/$defs/Liability" },
+    "loss_estimate": { "$ref": "#/$defs/LossEstimate" },
+    "response": { "$ref": "#/$defs/Response" },
+    "attribution_vector": { "$ref": "#/$defs/AttributionVector" },
+    "impact": { "$ref": "#/$defs/ImpactDetails" },
+    "severity": { "enum": ["CRITICAL", "HIGH", "MEDIUM", "LOW"] },
+    "compliance_tags": { "type": "array", "items": { "type": "string" } },
+    "ai_analysis": { "$ref": "#/$defs/AIAnalysis" },
+    "risk_score": { "type": "integer", "minimum": 0, "maximum": 100 },
+    "risk_breakdown": { "$ref": "#/$defs/RiskBreakdown" },
+    "insurability": { "$ref": "#/$defs/Insurability" },
+    "payload_hash": { "type": "string", "pattern": "^sha256:[a-f0-9]+$" }
+  },
+  "$defs": {
+    "FaultClassCore": {
+      "enum": ["AGENT_ERROR", "SPEC_AMBIGUITY", "TOOL_FAILURE", "ADVERSARIAL_INPUT", "USER_FAULT", "UNKNOWN"]
+    },
+    "FaultClassExtended": {
+      "enum": [
+        "PROMPT_INJECTION", "TOOL_ESCAPE", "REASONING_LOOP", "SPEC_AMBIGUITY", "HALLUCINATION",
+        "MEMORY_DRIFT", "COORDINATION_FAILURE", "SECURITY_BREACH", "AGENT_ERROR", "TOOL_FAILURE",
+        "ADVERSARIAL_INPUT", "USER_FAULT", "UNKNOWN"
+      ]
+    },
+    "ImpactScore": { "type": "integer", "minimum": 1, "maximum": 5 },
+    "AttributionVector": {
+      "type": "object",
+      "properties": {
+        "model": { "type": "number", "minimum": 0, "maximum": 1 },
+        "prompt": { "type": "number", "minimum": 0, "maximum": 1 },
+        "tools": { "type": "number", "minimum": 0, "maximum": 1 },
+        "human": { "type": "number", "minimum": 0, "maximum": 1 },
+        "policy": { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    },
+    "ImpactDetails": {
+      "type": "object",
+      "properties": {
+        "usd_estimated": { "type": "number" },
+        "categories": { "type": "array", "items": { "enum": ["financial", "data", "reputation", "compliance"] } },
+        "affected_resources": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "AIAnalysis": {
+      "type": "object",
+      "properties": {
+        "root_cause": { "type": "string" },
+        "remediation_steps": { "type": "array", "items": { "type": "string" } },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    },
+    "RiskBreakdown": {
+      "type": "object",
+      "properties": {
+        "severity": { "type": "number" },
+        "financial_impact": { "type": "number" },
+        "compliance_weight": { "type": "number" },
+        "historical_frequency": { "type": "number" }
+      }
+    },
+    "Insurability": {
+      "type": "object",
+      "properties": {
+        "score": { "type": "integer", "minimum": 0, "maximum": 100 },
+        "premium_multiplier": { "type": "number" },
+        "recommended_carriers": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "MetaExtended": {
+      "type": "object",
+      "properties": {
+        "schema": { "type": "string" },
+        "incident_id": { "type": "string" },
+        "incident_type": { "enum": ["INCIDENT", "NEAR_MISS"] },
+        "agent": { "type": "string" },
+        "agent_id": { "type": "string" },
+        "swarm_id": { "type": "string" },
+        "framework": { "type": "string" },
+        "environment": { "enum": ["production", "staging", "development", "sandbox"] },
+        "created_at": { "type": "string", "format": "date-time" },
+        "updated_at": { "type": "string", "format": "date-time" }
+      }
+    },
+    "TraceEntry": {
+      "type": "object",
+      "required": ["seq", "tool", "input", "output", "ts", "hash"],
+      "properties": {
+        "seq": { "type": "integer", "minimum": 1 },
+        "tool": { "type": "string" },
+        "input": { "type": "object" },
+        "output": { "type": "object" },
+        "ts": { "type": "string" },
+        "hash": { "type": "string", "pattern": "^sha256:[a-f0-9]+$" },
+        "duration_ms": { "type": "integer" },
+        "irreversible": { "type": "boolean" },
+        "agent_reasoning": { "type": "string" },
+        "state_snapshot": { "type": "object" }
+      }
+    },
+    "Constraint": {
+      "type": "object",
+      "required": ["policy", "eval_result"],
+      "properties": {
+        "policy": { "type": "string" },
+        "version": { "type": "string" },
+        "eval_result": { "enum": ["pass", "fail"] },
+        "breach_delta": { "type": "number" },
+        "gaps_identified": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "Classification": { "type": "object" },
+    "Liability": { "type": "object" },
+    "LossEstimate": { "type": "object" },
+    "Response": { "type": "object" }
+  }
+}
